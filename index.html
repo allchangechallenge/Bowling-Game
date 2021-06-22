@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.0.4/aframe.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.js"></script>
+
+        <script src="script/aframe-physics-system.js"></script>
+        <script src="https://unpkg.com/aframe-physics-extras@0.1.2/dist/aframe-physics-extras.min.js"></script>
+
+        <script src="https://unpkg.com/super-hands@^3.0.1/dist/super-hands.min.js"></script>
+        <script src="https://unpkg.com/aframe-event-set-component@4.2.1/dist/aframe-event-set-component.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+        <link rel="stylesheet" href="source/index.css">
+
+    </head>
+    <body>
+        <div id="game">
+            <a-scene id="aScene" physics="gravity : -9.8 ; friction : 0.3 ; debug : false ; ">
+                <a-assets>
+                    <a-asset-item id="bowling-pin" src="source/bowling-pin.obj"></a-asset-item>
+                    <a-asset-item id="bowling-pin-mtl" src="source/bowling-pin.mtl"></a-asset-item>
+                </a-assets>
+    
+                
+                <a-box id="floor" static-body grabbable color="darkseagreen" depth="33" height="0.2" width="5" rotation="0 0 0" position="0 -0.9 0"></a-box>
+                <a-sky color="lightblue"></a-sky>
+    
+                <a-entity progressive-controls position="0 0 5"></a-entity>
+    
+                <a-entity id="rig">
+                    <a-entity id="aCamera" camera position="0 2 2" look-controls="enabled:false" wasd-controls>
+                        
+                    </a-entity>
+                </a-entity>
+    
+                <a-sphere id="ball" static-body ball-monitor segmentsWidth="5" color="yellow" radius="0.21" position="0 -0.5 -2"></a-sphere>
+    
+                <a-entity>
+                    <a-entity id="pins" position="0 0 -12" scale="0.8 0.8 0.8">
+                        <a-obj-model pin-monitor color="grey" id="pin10" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="-1.8 0 -5"></a-obj-model>
+                        <a-obj-model pin-monitor color="grey" id="pin9" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="-0.6 0 -5"></a-obj-model>
+                        <a-obj-model pin-monitor color="grey" id="pin8" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="0.6 0 -5"></a-obj-model>
+                        <a-obj-model pin-monitor color="grey" id="pin7" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="1.8 0 -5"></a-obj-model>
+          
+                        <a-obj-model pin-monitor color="grey" id="pin6" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="-1.2 0 -3.5"></a-obj-model>
+                        <a-obj-model pin-monitor color="grey" id="pin5" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="0 0 -3.5"></a-obj-model>
+                        <a-obj-model pin-monitor color="grey" id="pin4" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="1.2 0 -3.5"></a-obj-model>
+          
+                        <a-obj-model pin-monitor color="grey" id="pin3" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="-0.6 0 -2"></a-obj-model>
+                        <a-obj-model pin-monitor color="grey" id="pin2" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="0.6 0 -2"></a-obj-model>
+          
+                        <a-obj-model pin-monitor color="grey" id="pin1" dynamic-body="mass: 0.08; shape: cylinder" obj-model="obj: #bowling-pin; mtl: #bowling-pin-mtl" rotation="0 0 0" position="0 0 -0.5"></a-obj-model>
+                    </a-entity>
+                </a-entity>
+            </a-scene>
+        </div>
+
+
+        <div id="board" class="rounded">
+            <b>My board<br></b>
+            <div id="content">
+                Knock down : <span id="pin_num">--</span><br>
+                Ball left : <span id="ball_num">3</span>
+            </div>
+            <div id="result">
+            </div>
+        </div>
+
+        <script>
+            let mouseStart = new THREE.Vector2() ;
+            let mouse = new THREE.Vector2() ;
+            let preMouses = [ [ 0, -2.2 ], [ 0, -2.2 ], [ 0, -2.2 ], [ 0, -2.2 ] ] ;
+
+            let moveTime = Date.now() ;
+
+            let ball = document.getElementById( "ball" ) ;
+            let aRig = document.getElementById( "rig" ) ;
+            let ballOriginPosition = ball.object3D.position ;
+
+            let aScene = document.getElementById( "aScene" ) ;
+            aScene.canvas.addEventListener( "mousedown", clickStart, false ) ;
+            aScene.canvas.addEventListener( "mousemove", clickMove, false ) ;
+            aScene.canvas.addEventListener( "mouseup", clickEnd, false ) ;
+
+            var active = 0 ;
+            function clickStart( event ) {
+                if ( active == 0 ) {
+                    active = 1 ;
+                    event.preventDefault() ;
+
+                    let rect = aScene.renderer.domElement.getBoundingClientRect() ;
+
+                    mouseStart.x = ( ( event.clientX - rect.left ) / aScene.renderer.domElement.clientWidth ) * 2 - 1 ;
+                    mouseStart.y = - ( ( event.clientY - rect.top ) / aScene.renderer.domElement.clientHeight ) * 2 + 1 ;
+
+                    let planeHeight = Math.tan( aCamera.object3DMap.camera.fov / 2 / 180 * Math.PI )  * Math.abs( ball.object3D.position.z ) * 1 ;
+                    let planeWidth = planeHeight * aCamera.object3DMap.camera.aspect ;
+
+                    ball.object3D.position.x = mouseStart.x * planeWidth ;
+                    // ball.object3D.position.y = aRig.object3D.position.y + mouseStart.y * planeHeight + ballOriginPosition.y ;
+                    // console.log( 'Start : ' + mouseStart.x, mouseStart.y, ball.object3D.position.x, ball.object3D.position.y ) ;
+
+
+                }
+            }
+
+            function clickMove( event ) {
+                if ( active == 1 ) {
+                    event.preventDefault() ;
+                    let rect = aScene.renderer.domElement.getBoundingClientRect() ;
+
+                    mouse.x = ( ( event.clientX - rect.left ) / aScene.renderer.domElement.clientWidth ) * 2 - 1 ;
+                    mouse.y = - ( ( event.clientY - rect.top ) / aScene.renderer.domElement.clientHeight ) * 2 + 1 ;
+
+                    preMouses.push( [ mouse.x, mouse.y ] ) ;
+                    preMouses.shift() ;
+
+                    let planeHeight = Math.tan( aCamera.object3DMap.camera.fov / 2 / 180 * Math.PI )  * Math.abs( ball.object3D.position.z ) * 1 ;
+                    let planeWidth = planeHeight * aCamera.object3DMap.camera.aspect ;
+
+                    ball.object3D.position.x = mouse.x * planeWidth ;
+                    // ball.object3D.position.y = aRig.object3D.position.y + mouse.y * planeHeight + ballOriginPosition.y ;
+
+                    // if ( active == 1 ) console.log( 'Move : ' + mouse.x, mouse.y, ball.object3D.position.x, ball.object3D.position.y ) ;
+
+                    moveTime = Date.now() ;
+                }
+
+            }
+
+            function clickEnd( event ) {
+                if ( active == 1 ) {
+                    event.preventDefault() ;
+
+                    let rect = aScene.renderer.domElement.getBoundingClientRect() ;
+
+                    mouseStart.x = ( ( event.clientX - rect.left ) / aScene.renderer.domElement.clientWidth ) * 2 - 1 ;
+                    mouseStart.y = - ( ( event.clientY - rect.top ) / aScene.renderer.domElement.clientHeight ) * 2 + 1 ;
+
+                    let planeHeight = Math.tan( aCamera.object3DMap.camera.fov / 2 / 180 * Math.PI )  * Math.abs( ball.object3D.position.z ) * 1 ;
+                    let planeWidth = planeHeight * aCamera.object3DMap.camera.aspect ;
+
+                    ball.object3D.position.x = mouseStart.x * planeWidth ;
+                    // ball.object3D.position.y = aRig.object3D.position.y + mouseStart.y * planeHeight + ballOriginPosition.y ;
+                    // console.log( 'End : ' + ball.object3D.position.x, ball.object3D.position.y ) ;
+
+                    let drag_x, drag_y, drag_tick ;
+                    let okMouses = [] ;
+                    for ( var i = 0 ; i < preMouses.length ; i ++ ) {
+                        if ( preMouses[ i ][ 1 ] > -2.2 ) {
+                            okMouses.push( preMouses[ i ] ) ;
+                        }
+                    }
+                    console.log( 'okMouses : ', okMouses ) ;
+                    if ( preMouses.length > 1 ) {
+                        drag_x = okMouses[ okMouses.length - 1 ][ 0 ] - okMouses[ 0 ][ 0 ] ;
+                        drag_y = okMouses[ okMouses.length - 1 ][ 1 ] - okMouses[ 0 ][ 1 ] ;
+                        drag_tick = Math.pow( drag_x * drag_x + drag_y * drag_y , 0.5 ) / okMouses.length ;
+                    }
+
+                    var v =  -5 * ( drag_y + 1 ) ;
+                    if ( v < -12 ) v = -12 ;
+                    ball.setAttribute( "dynamic-body", "mass : 500 ; shape : sphere ; " ) ;
+                    ball.body.velocity.set( 0, 0, v ) ;
+                    console.log( drag_y, v ) ;
+                    // console.log( 'velocity : ', ball.body.velocity ) ;
+                    // console.log( ball.object3D.position ) ;
+
+                    active = -1 ;   // can't click or move
+
+                    
+
+                    setTimeout( function() {
+                        resetBall( 1 ) ;
+                    }, 9300 ) ;
+                }   
+            }
+
+            var ballNum = 3 ;
+            function resetBall( time ) { 
+                let delay = time ? time : 3000 ;
+                setTimeout( 
+                    function() {
+                        ballNum -- ;
+                        if ( ballNum > 0 ) {
+                            // alert( 'You have knocked down ' + pinsKnocked + ' pins.\nStill left ' + ballNum + ' balls.' ) ;
+                            document.getElementById( 'pin_num' ).innerHTML = pinsKnocked ;
+                            document.getElementById( 'ball_num' ).innerHTML = ballNum ;
+                            knockId.forEach( (d) => { 
+                                var downPin = document.getElementById( d ) ;
+                                downPin.setAttribute( 'visible', false ) ;
+                            } ) ;
+                            console.log( knockId ) ;
+
+                            aCamera.setAttribute( 'position', { x : 0, y : 2, z : 2 } ) ;
+
+                            ball.removeAttribute( 'dynamic-body' ) ;
+                            ball.object3D.position.x = 0 ;
+                            ball.object3D.position.y = -0.5 ;
+                            ball.object3D.position.z = -2 ;
+
+                            active = 0 ;
+                            console.log( 'Start agian.' ) ;
+                        }
+                        // else alert( 'You have knocked down ' + pinsKnocked + ' pins.\nGame Over ！' ) ;
+                        else {
+                            showResult( 0 ) ;
+                        }
+                    }, delay
+                )
+            }
+
+            AFRAME.registerComponent( 'ball-monitor', {
+                tick : function( time, timeDelta ) {
+                    var ball_z = this.el ;
+                    var ball_pos = ball.object3D.position ;
+                    if ( ball_pos.z < -2.1 ) {    
+                        if ( ball_z.object3D.position.z < -16.5 ) {
+                            ball.body.velocity.set( 0, -9.8, 0 ) ;
+                        }
+                        if ( ball.object3D.position.z < -10 ) {
+                            aCamera.setAttribute( 'position', { 'x' : 0, 'y' : 0, 'z' : -10 } ) ;
+                        }
+                        else aCamera.setAttribute( 'position', { 'x' : 0, 'y' : ball_pos.y, 'z' : ball_pos.z + 1 } ) ;
+                    }
+                }
+            } )
+
+            var pinsKnocked = 0;
+            var knockId = [] ;
+            AFRAME.registerComponent( 'pin-monitor', {
+                    tick : function( time, timeDelta ) { 
+                    var pin = this.el ;
+                    if ( ( Math.abs( pin.object3D.rotation.x ) > 0.7 ) || ( Math.abs( pin.object3D.rotation.z ) > 0.7 ) ) { 
+                        console.log( `${this.el.id} tipped!` ) ;
+                        knockId.push( this.el.id ) ;
+                        pinsKnocked ++ ;
+                        this.el.removeAttribute( "pin-monitor" ) ;
+                    }
+                    if ( pinsKnocked == 10 ) {
+                        setTimeout( showResult( 1 ), 25000 )
+                        history.go( 0 ) ;
+                    }
+                }
+            } )
+
+            function showResult( r ) {
+                // document.getElementById( 'board' ).style.height = '80%' ;
+                document.getElementById( 'pin_num' ).innerHTML = pinsKnocked ;
+                document.getElementById( 'ball_num' ).innerHTML = ballNum ;
+                if ( r == 0 ) document.getElementById( 'result' ).innerHTML = "Game Over" ;
+                else document.getElementById( 'result' ).innerHTML = "You Win" ;
+            }
+
+        </script>
+    </body>
+</html>
